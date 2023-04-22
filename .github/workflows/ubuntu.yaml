@@ -1,0 +1,53 @@
+name: Build RustCC
+
+on: [push, pull_request]
+jobs:
+    conventional_commit_compliance:
+        name: "Conventional Commit Compliance Checks"
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout RustCC
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+
+            - name: Check conventional commit compliance
+              uses: cocogitto/cocogitto-action@v3
+
+    format_checks:
+        name: "Formatting Checks"
+        runs-on: ubuntu-latest
+        steps:
+            - name: Get required pkgs
+              run: |
+                  sudo apt update
+                  sudo apt-get install cargo make -y
+
+            - name: Checkout RustCC
+              uses: actions/checkout@v3
+              with:
+                  submodules: true
+
+            - name: Formatting Check
+              run: |
+                  make
+                  make check
+
+    tests:
+        name: "Test cases"
+        runs-on: ubuntu-latest
+        steps:
+            - name: Get required pkgs
+              run: |
+                  sudo apt update
+                  sudo apt-get install cargo make -y
+
+            - name: Checkout RustCC
+              uses: actions/checkout@v3
+              with:
+                  submodules: true
+
+            - name: Tests
+              run: |
+                  make
+                  make test
