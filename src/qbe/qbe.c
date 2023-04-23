@@ -56,16 +56,10 @@ static void func(Fn *fn) {
 	freeall();
 }
 
-void codegen(char *input_path, char *output_path, Target t) {
+void codegen(FILE *input_stream, char *input_path, FILE *output_stream, Target t) {
 	T = t;
+	output_file = output_stream;
 
-	input_file = fopen(input_path, "r");
-	output_file = fopen(output_path, "w");
-
-	parse(input_file, input_path, data, func);
-
-	T.emitfin(output_file);
-
-	fclose(input_file);
-	fclose(output_file);
+	parse(input_stream, input_path, data, func);
+	T.emitfin(output_stream);
 }
