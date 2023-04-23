@@ -1,6 +1,6 @@
 #include "qbe.h"
 
-static FILE *output_file, *input_file;
+static FILE *output_file;
 
 Target T; // The target we want to compile to.
 char debug[]; // Needed by optimization passes to emit debug information!
