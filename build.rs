@@ -15,11 +15,11 @@ fn main() {
     println!("cargo:rerun-if-changed={}", qbe_backend_path);
     format!("cargo:rerun-if-changed={}", qbe_backend_header_path);
 
-    call_bindgen_qbe(include_dir, qbe_backend_header_path, qbe_backend_mod_path);
+    bindgen_qbe(include_dir, qbe_backend_header_path, qbe_backend_mod_path);
     compile_c_files(include_dir);
 }
 
-fn call_bindgen_qbe(include_dir: &str, qbe_backend_header_path: &str, qbe_backend_mod_path: &str) {
+fn bindgen_qbe(include_dir: &str, qbe_backend_header_path: &str, qbe_backend_mod_path: &str) {
     let bindings = bindgen::Builder::default()
         .header(qbe_backend_header_path)
         .clang_arg(format!("-I{}", include_dir))

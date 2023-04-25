@@ -7,4 +7,4 @@ extern Target T_arm64;
 extern Target T_arm64_apple;
 extern Target T_rv64;
 
-void codegen(FILE *, char *, FILE *, Target);
+void codegen(FILE *, FILE *, Target);
