@@ -5,23 +5,20 @@ use std::{fs::File, io::Write};
 fn main() {
     let build_dir = utils::init_build_directory();
 
-    let lib_start_src = include_bytes!("../target/lib/libstart.a");
-    let lib_cguana_src = include_bytes!("../target/lib/libcguana.a");
-
     let input_name = String::from("./output.ssa");
     let output_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".s"));
     let object_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".o"));
 
-    let lib_start_path = format!("{}libstart.a", build_dir);
-    let lib_cguana_path = format!("{}libcguana.a", build_dir);
+    let lib_start = format!("{}libstart.a", build_dir);
+    let lib_cguana = format!("{}libcguana.a", build_dir);
 
-    File::create(format!("{}{}", build_dir, "libstart.a"))
+    File::create(lib_start.clone())
         .unwrap()
-        .write_all(lib_start_src)
+        .write_all(include_bytes!("../target/lib/libstart.a"))
         .unwrap();
-    File::create(format!("{}{}", build_dir, "libcguana.a"))
+    File::create(lib_cguana.clone())
         .unwrap()
-        .write_all(lib_cguana_src)
+        .write_all(include_bytes!("../target/lib/libcguana.a"))
         .unwrap();
 
     utils::run_qbe_codegen(&input_name, &output_name, utils::QBE_TARGETS::AMD64_SYSV);
@@ -30,7 +27,7 @@ fn main() {
     utils::invoke_assembler(&output_name, &object_name);
     println!("Object file assembly completed!");
 
-    invoke_linker!("a.out", &object_name, lib_start_path, lib_cguana_path);
+    invoke_linker!("a.out", &object_name, lib_start, lib_cguana);
     println!("Linking complete!");
 }
 
