@@ -1,25 +1,18 @@
 mod qbe;
 mod utils;
-use std::{fs::File, io::Write};
 
 fn main() {
     let build_dir = utils::init_build_directory();
+
+    let bin_executable = "a.out";
+    let linker = "ld.lld";
+    let use_musl: bool = false;
 
     let input_name = String::from("./output.ssa");
     let output_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".s"));
     let object_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".o"));
 
-    let lib_start = format!("{}libstart.a", build_dir);
-    let lib_cguana = format!("{}libcguana.a", build_dir);
-
-    File::create(lib_start.clone())
-        .unwrap()
-        .write_all(include_bytes!("../target/lib/ziglibc/libstart.a"))
-        .unwrap();
-    File::create(lib_cguana.clone())
-        .unwrap()
-        .write_all(include_bytes!("../target/lib/ziglibc/libcguana.a"))
-        .unwrap();
+    let lib_files = utils::generate_libc_files(build_dir, use_musl, object_name.clone());
 
     utils::run_qbe_codegen(&input_name, &output_name, utils::QBE_TARGETS::AMD64_SYSV);
     println!("QBE x86_64 codegen complete!");
@@ -27,23 +20,6 @@ fn main() {
     utils::invoke_assembler(&output_name, &object_name);
     println!("Object file assembly completed!");
 
-    invoke_linker!("a.out", &object_name, lib_start, lib_cguana);
+    utils::invoke_linker(linker, bin_executable, lib_files);
     println!("Linking complete!");
-}
-
-#[macro_export]
-macro_rules! invoke_linker {
-    ($output_file:expr, $( $object_file:expr ),* ) => {
-		let mut command = std::process::Command::new("ld.lld");
-		command.arg("-o");
-		command.arg($output_file);
-		$(
-			command.arg($object_file);
-		)*
-		command.arg("--as-needed");
-		match command.spawn() {
-			Err(e) => panic!("Failed to invoke linker: {:#?}", e),
-			Ok(mut cmd) => cmd.wait().unwrap(),
-		}
-	};
 }
