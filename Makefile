@@ -18,5 +18,7 @@ clean:
 	cargo clean
 	$(RM) -rf */*.o
 	$(RM) -f ./src/qbe/mod.rs
+	$(RM) -rf ./deps/ziglibc/zig-linux*
+	$(RM) -rf ./deps/musl-libc/build
 
 .PHONY: all build clean check test

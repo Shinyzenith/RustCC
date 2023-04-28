@@ -1,3 +1,12 @@
 [submodule "deps/qbe"]
 	path = deps/qbe
 	url = git://c9x.me/qbe.git
+	ignore = dirty
+[submodule "deps/ziglibc"]
+	path = deps/ziglibc
+	url = https://github.com/shinyzenith/ziglibc
+	ignore = dirty
+[submodule "deps/musl-libc"]
+	path = deps/musl-libc
+	url = git://git.musl-libc.org/musl
+	ignore = dirty

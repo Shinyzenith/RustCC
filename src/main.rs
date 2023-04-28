@@ -14,11 +14,11 @@ fn main() {
 
     File::create(lib_start.clone())
         .unwrap()
-        .write_all(include_bytes!("../target/lib/libstart.a"))
+        .write_all(include_bytes!("../target/lib/ziglibc/libstart.a"))
         .unwrap();
     File::create(lib_cguana.clone())
         .unwrap()
-        .write_all(include_bytes!("../target/lib/libcguana.a"))
+        .write_all(include_bytes!("../target/lib/ziglibc/libcguana.a"))
         .unwrap();
 
     utils::run_qbe_codegen(&input_name, &output_name, utils::QBE_TARGETS::AMD64_SYSV);
@@ -35,16 +35,15 @@ fn main() {
 macro_rules! invoke_linker {
     ($output_file:expr, $( $object_file:expr ),* ) => {
 		let mut command = std::process::Command::new("ld.lld");
-		command.arg("-m");
-		command.arg("elf_x86_64");
 		command.arg("-o");
 		command.arg($output_file);
-		command.arg("--as-needed");
 		$(
 			command.arg($object_file);
 		)*
-		if let Err(e) = command.spawn() {
-			panic!("Failed to invoke linker: {:#?}", e);
+		command.arg("--as-needed");
+		match command.spawn() {
+			Err(e) => panic!("Failed to invoke linker: {:#?}", e),
+			Ok(mut cmd) => cmd.wait().unwrap(),
 		}
 	};
 }
