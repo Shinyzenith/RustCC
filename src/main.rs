@@ -1,20 +1,36 @@
 mod qbe;
 mod utils;
+use std::{fs::File, io::Write};
 
 fn main() {
     let build_dir = utils::init_build_directory();
+
+    let lib_start_src = include_bytes!("../target/lib/libstart.a");
+    let lib_cguana_src = include_bytes!("../target/lib/libcguana.a");
+
     let input_name = String::from("./output.ssa");
     let output_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".s"));
     let object_name = format!("{}{}", build_dir, input_name.replace(".ssa", ".o"));
 
-    // For now we only support x86_64
+    let lib_start_path = format!("{}libstart.a", build_dir);
+    let lib_cguana_path = format!("{}libcguana.a", build_dir);
+
+    File::create(format!("{}{}", build_dir, "libstart.a"))
+        .unwrap()
+        .write_all(lib_start_src)
+        .unwrap();
+    File::create(format!("{}{}", build_dir, "libcguana.a"))
+        .unwrap()
+        .write_all(lib_cguana_src)
+        .unwrap();
+
     utils::run_qbe_codegen(&input_name, &output_name, utils::QBE_TARGETS::AMD64_SYSV);
     println!("QBE x86_64 codegen complete!");
 
     utils::invoke_assembler(&output_name, &object_name);
     println!("Object file assembly completed!");
 
-    invoke_linker!("a.out", &object_name);
+    invoke_linker!("a.out", &object_name, lib_start_path, lib_cguana_path);
     println!("Linking complete!");
 }
 
@@ -26,8 +42,6 @@ macro_rules! invoke_linker {
 		command.arg("elf_x86_64");
 		command.arg("-o");
 		command.arg($output_file);
-		command.arg("libstart.a");
-		command.arg("libcguana.a");
 		command.arg("--as-needed");
 		$(
 			command.arg($object_file);

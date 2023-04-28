@@ -42,7 +42,7 @@ pub fn invoke_assembler(assembly_file_path: &str, object_file_path: &str) {
 
 pub fn run_qbe_codegen(input_file_name: &str, output_file_name: &str, target: QBE_TARGETS) {
     let input_name_c = CString::new(input_file_name).unwrap();
-    let output_name_c = CString::new(output_file_name.clone()).unwrap();
+    let output_name_c = CString::new(output_file_name).unwrap();
 
     let read_mode = CString::new("r").unwrap();
     let write_mode = CString::new("w").unwrap();

@@ -1,10 +1,13 @@
 extern crate bindgen;
 extern crate cc;
 
-use std::fs::{self, remove_file, OpenOptions};
-use std::io::{self, Write};
-use std::path::PathBuf;
-use std::{env, process};
+use std::{
+    env,
+    fs::{self, remove_file, OpenOptions},
+    io::{self, Write},
+    path::{Path, PathBuf},
+    process,
+};
 
 fn main() {
     let include_dir = "./deps/qbe";
@@ -24,12 +27,18 @@ fn build_libcguana(ziglibc_repo: &str, zig_version: &str) {
     let out_dir = env::var("OUT_DIR").unwrap();
     let zig_libc_dir = format!("{}/ziglibc", out_dir);
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let lib_dir = Path::new(&manifest_dir).join("target/lib");
+    if !lib_dir.exists() {
+        fs::create_dir(lib_dir).unwrap();
+    }
+
     process::Command::new("git")
         .arg("clone")
         .arg(ziglibc_repo)
         .arg("--depth")
         .arg("1")
-        .current_dir(out_dir.clone())
+        .current_dir(out_dir)
         .spawn()
         .unwrap()
         .wait()
@@ -63,21 +72,13 @@ fn build_libcguana(ziglibc_repo: &str, zig_version: &str) {
 
     fs::copy(
         format!("{}/zig-out/lib/libcguana.a", zig_libc_dir),
-        format!(
-            "{}/target/{}/libcguana.a",
-            env::var("CARGO_MANIFEST_DIR").unwrap(),
-            env::var("PROFILE").unwrap()
-        ),
+        format!("{}/target/lib/libcguana.a", manifest_dir),
     )
     .unwrap();
 
     fs::copy(
         format!("{}/zig-out/lib/libstart.a", zig_libc_dir),
-        format!(
-            "{}/target/{}/libstart.a",
-            env::var("CARGO_MANIFEST_DIR").unwrap(),
-            env::var("PROFILE").unwrap()
-        ),
+        format!("{}/target/lib/libstart.a", manifest_dir),
     )
     .unwrap();
 }
