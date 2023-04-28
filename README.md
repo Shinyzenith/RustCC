@@ -2,7 +2,14 @@
 
 A simple ANSI-C compliant C compiler written in Rust.
 
-## Dependencies:
+## Build time dependencies:
 
-1. Cargo
-1. Rustc
+1. cargo
+1. git
+1. tar
+1. wget
+1. xz
+
+## Run time dependencies:
+
+1. lld

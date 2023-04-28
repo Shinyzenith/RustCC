@@ -1,10 +1,10 @@
 extern crate bindgen;
 extern crate cc;
 
-use std::env;
-use std::fs::{remove_file, OpenOptions};
+use std::fs::{self, remove_file, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::{env, process};
 
 fn main() {
     let include_dir = "./deps/qbe";
@@ -17,6 +17,69 @@ fn main() {
 
     bindgen_qbe(include_dir, qbe_backend_header_path, qbe_backend_mod_path);
     compile_c_files(include_dir);
+    build_libcguana("https://github.com/shinyzenith/ziglibc", "0.11.0-dev.2157+f56f3c582");
+}
+
+fn build_libcguana(ziglibc_repo: &str, zig_version: &str) {
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let zig_libc_dir = format!("{}/ziglibc", out_dir);
+
+    process::Command::new("git")
+        .arg("clone")
+        .arg(ziglibc_repo)
+        .arg("--depth")
+        .arg("1")
+        .current_dir(out_dir.clone())
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+
+    process::Command::new("wget")
+        .arg(format!("https://ziglang.org/builds/zig-linux-x86_64-{}.tar.xz", zig_version))
+        .current_dir(zig_libc_dir.clone())
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+
+    process::Command::new("tar")
+        .arg("xf")
+        .arg(format!("zig-linux-x86_64-{}.tar.xz", zig_version))
+        .current_dir(zig_libc_dir.clone())
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+
+    process::Command::new("sh")
+        .arg("-c")
+        .current_dir(zig_libc_dir.clone())
+        .arg("./zig-linux-x86_64-0.11.0-dev.2157+f56f3c582/zig build")
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+
+    fs::copy(
+        format!("{}/zig-out/lib/libcguana.a", zig_libc_dir),
+        format!(
+            "{}/target/{}/libcguana.a",
+            env::var("CARGO_MANIFEST_DIR").unwrap(),
+            env::var("PROFILE").unwrap()
+        ),
+    )
+    .unwrap();
+
+    fs::copy(
+        format!("{}/zig-out/lib/libstart.a", zig_libc_dir),
+        format!(
+            "{}/target/{}/libstart.a",
+            env::var("CARGO_MANIFEST_DIR").unwrap(),
+            env::var("PROFILE").unwrap()
+        ),
+    )
+    .unwrap();
 }
 
 fn bindgen_qbe(include_dir: &str, qbe_backend_header_path: &str, qbe_backend_mod_path: &str) {

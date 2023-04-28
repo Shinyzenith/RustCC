@@ -40,71 +40,7 @@ pub fn invoke_assembler(assembly_file_path: &str, object_file_path: &str) {
     };
 }
 
-pub fn invoke_linker(object_file: &str, output_file: &str, linker_is_cc: bool) {
-    // For now we only support x86_64 elf emulations!
-    // TODO: If linker is cc, then invoke ld on failure.
-    // TODO: If linker is ld, then invoke cc on failure.
-    let mut ld_cmd = process::Command::new("sh");
-    ld_cmd.arg("-c");
-    ld_cmd.arg(format!(
-        "ld											\
-
-			-m elf_x86_64								\
-			/usr/lib/x86_64-linux-gnu/crti.o			\
-			/usr/lib/x86_64-linux-gnu/crt1.o			\
-			/usr/lib/gcc/x86_64-linux-gnu/*/crtbegin.o	\
-			-l /usr/lib/gcc/x86_64-linux-gnu			\
-			-l/usr/lib/x86_64-linux-gnu					\
-			-l/usr/lib64								\
-			-l/lib64									\
-			-l/usr/lib/x86_64-linux-gnu					\
-			-l/usr/lib									\
-			-l/lib										\
-			-dynamic-linker								\
-			/lib64/ld-linux-x86-64.so.2					\
-			--start-group								\
-			-lc											\
-			--end-group									\
-			/usr/lib/gcc/x86_64-linux-gnu/11/crtends.o	\
-			/usr/lib/x86_64-linux-gnu/crtn.o			\
-			-o {} {}",
-        output_file, object_file
-    ));
-
-    let mut cc_cmd = process::Command::new("cc");
-    cc_cmd.arg("-o").arg(output_file).arg(object_file);
-
-    if linker_is_cc {
-        if let Err(e) = cc_cmd.spawn() {
-            println!("Failed to invoke $CC: {:#?}", e);
-            println!("Attempting to invoke system $LD");
-            if let Err(e) = ld_cmd.spawn() {
-                panic!("Failed to run linker: {:#?}", e);
-            }
-        }
-        return;
-    }
-
-    if let Err(e) = ld_cmd.spawn() {
-        println!("Failed to invoke $LD: {:#?}", e);
-        println!("Attempting to invoke system $CC");
-        if let Err(e) = cc_cmd.spawn() {
-            panic!("Failed to run linker: {:#?}", e);
-        }
-    }
-}
-
-pub fn run_qbe_codegen(input_file_name: &str, target: QBE_TARGETS) -> String {
-    let build_dir: String = format!("/tmp/rustcc-build-{}/", Uuid::new_v4());
-    let build_dir_path = Path::new(build_dir.as_str());
-    if !build_dir_path.exists() {
-        if let Err(e) = fs::create_dir(build_dir.clone()) {
-            panic!("Failed to create build directory: {:#?}", e);
-        }
-    }
-    let file_name = Path::new(input_file_name).file_stem().unwrap().to_str().unwrap();
-    let output_file_name = format!("/{}/{}.s", build_dir, file_name);
-
+pub fn run_qbe_codegen(input_file_name: &str, output_file_name: &str, target: QBE_TARGETS) {
     let input_name_c = CString::new(input_file_name).unwrap();
     let output_name_c = CString::new(output_file_name.clone()).unwrap();
 
@@ -120,5 +56,18 @@ pub fn run_qbe_codegen(input_file_name: &str, target: QBE_TARGETS) -> String {
         qbe::fclose(output_stream);
         qbe::fclose(input_stream);
     }
-    output_file_name
+}
+
+pub fn init_build_directory() -> String {
+    let mut build_dir = format!("/tmp/rustcc-build-{}/", Uuid::new_v4());
+
+    while Path::new(build_dir.as_str()).exists() {
+        println!("Build Directory: {} already exists. Retrying....", build_dir);
+        build_dir = format!("/tmp/rustcc-build-{}/", Uuid::new_v4());
+    }
+    if let Err(e) = fs::create_dir(build_dir.clone()) {
+        panic!("Failed to create build_directory: {:#?}", e);
+    }
+
+    build_dir
 }
